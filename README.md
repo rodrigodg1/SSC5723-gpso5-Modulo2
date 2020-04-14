@@ -4,4 +4,4 @@
 ## Como Compilar ?
 Para compilar o arquivo, execute o comando: `gcc produtor-consumidor.c -pthread`
 ## Como Executar ?
-Para compilar o arquivo, execute o comando: `./a.out`
+Para executar o arquivo, execute o comando: `./a.out`

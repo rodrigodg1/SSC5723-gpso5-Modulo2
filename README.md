@@ -1,2 +1,7 @@
-# SSC5723-gpso5-Modulo2
-SSC5723-gpso5-Modulo2
+
+## Projeto do Modulo 2 - Produtor e Consumidor
+
+## Como Compilar ?
+Para compilar o arquivo, execute o comando: `gcc produtor-consumidor.c -pthread`
+## Como Executar ?
+Para compilar o arquivo, execute o comando: `./a.out`

@@ -53,6 +53,7 @@ void *producer(void *pno)
 
         item = 1 + rand() % (50 - 1); // produz um numero inteiro aleatorio
 
+        //
         sem_wait(&empty);
         pthread_mutex_lock(&mutex);
         buffer[in] = item;
@@ -70,6 +71,11 @@ void *producer(void *pno)
         //for (int j = 0; j < (0xFFFFFFFF); j++);
 
         pthread_mutex_unlock(&mutex);
+     
+       /* 
+       incrementa um valor ao semaforo full, consequentemente se algum outro processo ja havia solicitado a entrada
+       e esta bloqueado pela chamada sem_wait(), será acordado.
+       */
         sem_post(&full);
     }
 }
@@ -78,8 +84,13 @@ void *consumer(void *cno)
     for (int i = 0; i < MaxItems; i++)
     {
 
+       /*o semaforo full sera decrementado
+       e o processor entrará na região crítica, bloqueando-a.
+       */
         sem_wait(&full);
         pthread_mutex_lock(&mutex);
+     
+       /* o item consumido segue a ordem da produção*/     
         int item = buffer[out];
 
         printf("Consumidor %d: \t Removeu o  Item (%d) \t na posicao [%d] \t \n", *((int *)cno), item, out);
@@ -89,6 +100,7 @@ void *consumer(void *cno)
         //delay
         //for (int j = 0; j < (0xFFFFFFFF); j++);
 
+        /*libera e incrementa o semaforo da contagem das posições vazias do buffer*/
         pthread_mutex_unlock(&mutex);
         sem_post(&empty);
     }
@@ -105,7 +117,9 @@ int main()
     //cria um mutex
     pthread_mutex_init(&mutex, NULL);
 
-    // inicia o semaforo empty
+    /* inicia o semaforo empty com o tamanho do buffer.
+     e o semaforo full com zero items produzidos.
+    */
     sem_init(&empty, 0, BufferSize);
     sem_init(&full, 0, 0);
 

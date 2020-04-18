@@ -14,8 +14,8 @@ int buffer[BufferSize];
 
 pthread_mutex_t mutex;
 
-/* semaforo (empty) para contar o numero de vagas que estao vazias
- e um semaforo (full) para contar o numero de vagas que estao cheias
+/* semaforo (empty) para contar o número de vagas que estão vazias
+ e um semaforo (full) para contar o número de vagas que estão cheias
 */
 sem_t empty;
 sem_t full;
@@ -47,31 +47,35 @@ void *produtor(void *pno)
     for (int i = 0; i < MaxItems; i++)
     {
 
-        item = 1 + rand() % (50 - 1); // produz um numero inteiro aleatorio
+        // produz um número inteiro aleatório
+        item = 1 + rand() % (50 - 1);
 
-        //
+        /*verifica o valor de empty, se > 0, o decremento irá acontecer 
+        e será obtido uma "trava" para acessar a região compartilhada e adicionar o item em uma posição do buffer.
+        Se empty = 0, então não existe espaço no buffer e o processo produtor é bloqueado.
+        */
         sem_wait(&empty);
         pthread_mutex_lock(&mutex);
         buffer[in] = item;
 
-        //veriffica se existe posicoes livres no buffer
+        //verifica se se deve mostrar uma label de "CHEIO" representando o buffer
         bufferStatus = verifica_espacos_livres(espacos_livres);
 
         printf("Produtor %d: \t Adicionou o Item (%d) \t na posicao [%d]  \t%s \n", *((int *)pno), buffer[in], in, bufferStatus);
         free(bufferStatus);
         espacos_livres--;
 
+        // atualiza a prox. posição do buffer
         in = (in + 1) % BufferSize;
 
         //delay
-        for (int j = 0; j < (0xFFFFFFFF); j++)
-            ;
+        //for (int j = 0; j < (0xFFFFFFFF); j++);
 
         pthread_mutex_unlock(&mutex);
 
         /* 
-       incrementa um valor ao semaforo full, consequentemente se algum outro processo ja havia solicitado a entrada
-       e esta bloqueado pela chamada sem_wait(), será acordado.
+       incrementa um valor ao semaforo full, consequentemente se algum outro processo já havia solicitado a entrada
+       e está bloqueado pela chamada sem_wait(), será acordado.
        */
         sem_post(&full);
     }
@@ -81,13 +85,13 @@ void *consumidor(void *cno)
     for (int i = 0; i < MaxItems; i++)
     {
 
-        /*o semaforo full sera decrementado
-       e o processo entrará na região crítica, bloqueando-a.
+        /*o semáforo full será decrementado se full > 0 e o processo entrará na região crítica, bloqueando-a.
+        Caso contrário, o processo consumidor será bloqueado.
        */
         sem_wait(&full);
         pthread_mutex_lock(&mutex);
 
-        /* o item consumido segue a ordem da produção*/
+        /* o item consumido, segue a ordem da produção*/
         int item = buffer[out];
 
         printf("Consumidor %d: \t Removeu o  Item (%d) \t na posicao [%d] \t \n", *((int *)cno), item, out);
@@ -95,10 +99,9 @@ void *consumidor(void *cno)
         out = (out + 1) % BufferSize;
 
         //delay
-        for (int j = 0; j < (0xFFFFFFFF); j++)
-            ;
+        //for (int j = 0; j < (0xFFFFFFFF); j++);
 
-        /*libera e incrementa o semaforo da contagem das posições vazias do buffer*/
+        /*libera a trava e incrementa o semáforo da contagem das posições vazias do buffer*/
         pthread_mutex_unlock(&mutex);
         sem_post(&empty);
     }
@@ -107,32 +110,33 @@ void *consumidor(void *cno)
 int main()
 {
 
-    int qtd_produtor = 3;
-    int qtd_consumidor = 3;
+    int qtd_produtor = 2;
+    int qtd_consumidor = 2;
 
     pthread_t pro[qtd_produtor], con[qtd_consumidor];
 
     //cria um mutex
     pthread_mutex_init(&mutex, NULL);
 
-    /* inicia o semaforo empty com o tamanho do buffer.
+    /* inicia o semáforo empty com o tamanho do buffer.
      e o semaforo full com zero items produzidos.
     */
     sem_init(&empty, 0, BufferSize);
     sem_init(&full, 0, 0);
 
-    // nomeia os produtores e consumidores
-    int a[3] = {1, 2, 3};
+    // labels (nomes) para os produtores e consumidores
+    int p[2] = {1, 2};
+    int c[2] = {1, 2};
 
     printf("\nID do Produtor \tItem Adicionado \tPosicao do Item \tBuffer\n\n");
 
     for (int i = 0; i < qtd_produtor; i++)
     {
-        pthread_create(&pro[i], NULL, (void *)produtor, (void *)&a[i]);
+        pthread_create(&pro[i], NULL, (void *)produtor, (void *)&p[i]);
     }
     for (int i = 0; i < qtd_consumidor; i++)
     {
-        pthread_create(&con[i], NULL, (void *)consumidor, (void *)&a[i]);
+        pthread_create(&con[i], NULL, (void *)consumidor, (void *)&c[i]);
     }
 
     for (int i = 0; i < qtd_produtor; i++)
@@ -144,6 +148,7 @@ int main()
         pthread_join(con[i], NULL);
     }
 
+    // Elimina os semaforos e o mutex
     pthread_mutex_destroy(&mutex);
     sem_destroy(&empty);
     sem_destroy(&full);

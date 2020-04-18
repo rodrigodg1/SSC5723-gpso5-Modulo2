@@ -5,7 +5,7 @@
 #include <time.h>
 #include <string.h>
 
-#define MaxItems 5   // Maximo de itens que de producao/consumo
+#define MaxItems 5   // Maximo de itens de producao/consumo
 #define BufferSize 5 // Tamanho do Buffer
 
 int in = 0;
@@ -22,28 +22,24 @@ sem_t full;
 
 int espacos_livres = BufferSize - 1;
 
-
-
-char* verifica_espacos_livres (int espacos_livres)
+char *verifica_espacos_livres(int espacos_livres)
 {
     char *status;
-    status = malloc (sizeof (char) * 15);
-    
-     if (espacos_livres == 0)
+    status = malloc(sizeof(char) * 15);
+
+    if (espacos_livres == 0)
     {
-         strcpy(status, "CHEIO");
+        strcpy(status, "CHEIO");
     }
     else
     {
-         strcpy(status, "");
+        strcpy(status, "");
     }
-   
-    
+
     return status;
 }
 
-
-void *producer(void *pno)
+void *produtor(void *pno)
 {
     int item;
     char *bufferStatus;
@@ -60,37 +56,38 @@ void *producer(void *pno)
 
         //veriffica se existe posicoes livres no buffer
         bufferStatus = verifica_espacos_livres(espacos_livres);
-        
+
         printf("Produtor %d: \t Adicionou o Item (%d) \t na posicao [%d]  \t%s \n", *((int *)pno), buffer[in], in, bufferStatus);
         free(bufferStatus);
         espacos_livres--;
-        
+
         in = (in + 1) % BufferSize;
 
         //delay
-        //for (int j = 0; j < (0xFFFFFFFF); j++);
+        for (int j = 0; j < (0xFFFFFFFF); j++)
+            ;
 
         pthread_mutex_unlock(&mutex);
-     
-       /* 
+
+        /* 
        incrementa um valor ao semaforo full, consequentemente se algum outro processo ja havia solicitado a entrada
        e esta bloqueado pela chamada sem_wait(), será acordado.
        */
         sem_post(&full);
     }
 }
-void *consumer(void *cno)
+void *consumidor(void *cno)
 {
     for (int i = 0; i < MaxItems; i++)
     {
 
-       /*o semaforo full sera decrementado
-       e o processor entrará na região crítica, bloqueando-a.
+        /*o semaforo full sera decrementado
+       e o processo entrará na região crítica, bloqueando-a.
        */
         sem_wait(&full);
         pthread_mutex_lock(&mutex);
-     
-       /* o item consumido segue a ordem da produção*/     
+
+        /* o item consumido segue a ordem da produção*/
         int item = buffer[out];
 
         printf("Consumidor %d: \t Removeu o  Item (%d) \t na posicao [%d] \t \n", *((int *)cno), item, out);
@@ -98,7 +95,8 @@ void *consumer(void *cno)
         out = (out + 1) % BufferSize;
 
         //delay
-        //for (int j = 0; j < (0xFFFFFFFF); j++);
+        for (int j = 0; j < (0xFFFFFFFF); j++)
+            ;
 
         /*libera e incrementa o semaforo da contagem das posições vazias do buffer*/
         pthread_mutex_unlock(&mutex);
@@ -109,8 +107,8 @@ void *consumer(void *cno)
 int main()
 {
 
-    int qtd_produtor = 2;
-    int qtd_consumidor = 2;
+    int qtd_produtor = 3;
+    int qtd_consumidor = 3;
 
     pthread_t pro[qtd_produtor], con[qtd_consumidor];
 
@@ -123,17 +121,18 @@ int main()
     sem_init(&empty, 0, BufferSize);
     sem_init(&full, 0, 0);
 
-    int a[2] = {1, 2}; // nomeia os produtores e consumidores
+    // nomeia os produtores e consumidores
+    int a[3] = {1, 2, 3};
 
     printf("\nID do Produtor \tItem Adicionado \tPosicao do Item \tBuffer\n\n");
 
     for (int i = 0; i < qtd_produtor; i++)
     {
-        pthread_create(&pro[i], NULL, (void *)producer, (void *)&a[i]);
+        pthread_create(&pro[i], NULL, (void *)produtor, (void *)&a[i]);
     }
     for (int i = 0; i < qtd_consumidor; i++)
     {
-        pthread_create(&con[i], NULL, (void *)consumer, (void *)&a[i]);
+        pthread_create(&con[i], NULL, (void *)consumidor, (void *)&a[i]);
     }
 
     for (int i = 0; i < qtd_produtor; i++)

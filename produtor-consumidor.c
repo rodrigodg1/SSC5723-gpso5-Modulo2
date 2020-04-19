@@ -8,10 +8,14 @@
 #define MaxItems 5   // Maximo de itens de producao/consumo
 #define BufferSize 5 // Tamanho do Buffer
 
+/*Armazenam as posições do buffer que será inserido (in) pelo produtor e removido (out) pelo consumidor*/
 int in = 0;
 int out = 0;
+
+/*Criação do buffer (recurso compartilhado)*/
 int buffer[BufferSize];
 
+/*Definição do mutex, para o acesso ao recurso compartilhado*/
 pthread_mutex_t mutex;
 
 /* semaforo (empty) para contar o número de vagas que estão vazias
@@ -22,6 +26,7 @@ sem_t full;
 
 int espacos_livres = BufferSize - 1;
 
+/*Função apenas para retornar se o buffer está cheio ou não*/
 char *verifica_espacos_livres(int espacos_livres)
 {
     char *status;
@@ -39,6 +44,7 @@ char *verifica_espacos_livres(int espacos_livres)
     return status;
 }
 
+/*Função para produção dos itens pelo produtor*/
 void *produtor(void *pno)
 {
     int item;
@@ -71,6 +77,7 @@ void *produtor(void *pno)
         //delay
         //for (int j = 0; j < (0xFFFFFFFF); j++);
 
+        /*Libera uma trava (bloqueio)*/
         pthread_mutex_unlock(&mutex);
 
         /* 
@@ -96,6 +103,7 @@ void *consumidor(void *cno)
 
         printf("Consumidor %d: \t Removeu o  Item (%d) \t na posicao [%d] \t \n", *((int *)cno), item, out);
         espacos_livres++;
+        // atualiza a prox. posição do buffer
         out = (out + 1) % BufferSize;
 
         //delay
@@ -110,12 +118,14 @@ void *consumidor(void *cno)
 int main()
 {
 
+    /* definição da qtd de produtor/consumidor */
     int qtd_produtor = 2;
     int qtd_consumidor = 2;
 
+    /* criação da thread para o produtor e o consumidor */
     pthread_t pro[qtd_produtor], con[qtd_consumidor];
 
-    //cria um mutex
+    /* cria/inicializa o mutex */
     pthread_mutex_init(&mutex, NULL);
 
     /* inicia o semáforo empty com o tamanho do buffer.
@@ -130,6 +140,8 @@ int main()
 
     printf("\nID do Produtor \tItem Adicionado \tPosicao do Item \tBuffer\n\n");
 
+  /* Criação das Threads
+     Concorrência ao acesso ao buffer */ 
     for (int i = 0; i < qtd_produtor; i++)
     {
         pthread_create(&pro[i], NULL, (void *)produtor, (void *)&p[i]);
@@ -139,6 +151,10 @@ int main()
         pthread_create(&con[i], NULL, (void *)consumidor, (void *)&c[i]);
     }
 
+    
+ 
+ 
+   /* garante a continuação da execução das threads assim que uma for finalizada */ 
     for (int i = 0; i < qtd_produtor; i++)
     {
         pthread_join(pro[i], NULL);

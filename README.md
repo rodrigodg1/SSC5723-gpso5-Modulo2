@@ -1,5 +1,5 @@
 
-## Projeto do Modulo 2 - Produtor e Consumidor
+## Projeto do Módulo 2 - Produtor e Consumidor
 Dois processos (produtores e consumidores) compartilham um buffer de tamanho fixo. O produtor insere a informação no buffer e o consumidor retira a informação do buffer.
  -   Se o buffer estiver cheio, o produtor é bloqueado.
     
